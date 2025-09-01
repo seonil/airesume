@@ -5,11 +5,12 @@ import ImageUploader from './components/ImageUploader';
 import OptionsPanel from './components/OptionsPanel';
 import ResultDisplay from './components/ResultDisplay';
 import { generateResumePhoto } from './services/geminiService';
-import { PayPalButton } from './services/stripeService'; // Note: Filename is kept, but content is PayPal
+import { PayPalButton } from './services/paypalService'; // Corrected import path
 import { Gender } from './types';
 import type { StyleOption, BackgroundOption, AspectRatioOption, FramingOption, AngleOption, ExpressionOption } from './types';
 import { MALE_SUITS, BACKGROUND_OPTIONS, ASPECT_RATIO_OPTIONS, FRAMING_OPTIONS, ANGLE_OPTIONS, EXPRESSION_OPTIONS, PRICE_KRW, ENABLE_PAYMENT } from './constants';
 
+// FIX: Complete truncated component and add default export.
 const App: React.FC = () => {
   const [originalImage, setOriginalImage] = useState<File | null>(null);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
@@ -157,54 +158,50 @@ const App: React.FC = () => {
                                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                 </svg>
-                                <span>생성 중...</span>
+                                처리 중...
                             </div>
                         ) : (
-                            <PayPalButton 
-                                amount={String(PRICE_KRW)}
-                                onSuccess={handlePaymentSuccess}
-                                onError={(err) => setError(`PayPal 결제 오류: ${err}`)}
-                                disabled={!consent}
+                           <PayPalButton
+                              amount={String(PRICE_KRW)}
+                              onSuccess={handlePaymentSuccess}
+                              onError={setError}
+                              disabled={!consent || isLoading}
                             />
                         )
                     ) : (
-                         <button
-                            onClick={handleGenerateRequest}
-                            disabled={isLoading || !consent}
-                            className="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center text-lg"
-                        >
-                          {isLoading ? (
-                              <>
+                      <button 
+                        onClick={handleGenerateRequest} 
+                        disabled={!consent || isLoading}
+                        className="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-lg"
+                      >
+                         {isLoading ? (
+                            <>
                                 <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                 </svg>
-                                <span>생성 중...</span>
-                              </>
-                          ) : (
-                            '생성하기'
-                          )}
-                        </button>
+                                <span>사진 생성 중...</span>
+                            </>
+                        ) : (
+                            'AI 증명사진 생성하기'
+                        )}
+                      </button>
                     )}
                   </div>
                 </div>
               </div>
             )}
+            {error && <div className="mt-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg" role="alert">{error}</div>}
           </div>
 
           {/* Right Panel */}
-          <div className="flex flex-col">
-            <ResultDisplay
+          <div className="h-full">
+            <ResultDisplay 
               originalImage={originalImage}
               generatedImage={generatedImage}
               isLoading={isLoading}
               aspectRatio={selectedAspectRatio.aspectRatio}
             />
-            {error && (
-              <div className="mt-4 p-3 bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-200 rounded-lg text-center">
-                <p>{error}</p>
-              </div>
-            )}
           </div>
         </div>
       </main>
