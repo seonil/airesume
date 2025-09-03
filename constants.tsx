@@ -1,5 +1,5 @@
 import React from 'react';
-import type { StyleOption, BackgroundOption, AspectRatioOption, FramingOption, AngleOption, ExpressionOption } from './types';
+import type { StyleOption, BackgroundOption, AspectRatioOption, FramingOption, AngleOption, ExpressionOption, RetouchingOption, SpecialRequestOption } from './types';
 
 export const APP_TITLE = 'AI 증명사진 만들기';
 export const PRICE_KRW = 500;
@@ -44,6 +44,23 @@ export const EXPRESSION_OPTIONS: ExpressionOption[] = [
   { id: 'slight-smile', label: '은은한 미소', prompt: 'Subtly and realistically adjust the facial expression to a gentle, slight, closed-mouth smile suitable for a professional headshot. Ensure the change is minimal, natural-looking, and fits the person\'s face.' },
   { id: 'bright-smile', label: '환한 미소', prompt: 'Subtly and realistically adjust the facial expression to a warm, genuine, open-mouth smile suitable for a professional headshot. Ensure the change is natural-looking, pleasant, and fits the person\'s face.' },
   { id: 'confident', label: '자신감 있는 표정', prompt: 'Subtly and realistically adjust the facial expression to convey confidence. This may include a very slight, closed-mouth smile, a hint of a "smize" (smiling with the eyes), and a generally assured look. The change must be minimal, natural, and professional.' },
+];
+
+export const RETOUCHING_OPTIONS: RetouchingOption[] = [
+  { id: 'level-0', label: '원본', prompt: 'Strictly preserve all facial features, bone structure, skin texture, and identity. Do not make any alterations to the face!!!!!!' },
+  { id: 'level-1', label: '최소', prompt: 'Apply only the most subtle and minimal professional retouching. Slightly even out skin tone. Do not alter facial features.' },
+  { id: 'level-2', label: '기본', prompt: 'Apply standard professional headshot retouching. Even out skin tone, soften very minor blemishes, and slightly enhance lighting to look professional, but keep all facial features and structure identical.' },
+  { id: 'level-3', label: '보정', prompt: 'In addition to standard retouching, make very subtle, natural-looking enhancements to facial symmetry and features to increase attractiveness slightly, while ensuring the person is still completely recognizable. The changes must be minimal.' },
+  { id: 'level-4', label: '강함', prompt: 'Make subtle enhancements to facial features to create a slightly more idealized and charismatic version of the person, while maintaining their core identity and recognizability. The result should look like the person on their absolute best day, professionally photographed and retouched.' },
+];
+
+export const SPECIAL_REQUEST_OPTIONS: SpecialRequestOption[] = [
+  { id: 'keep-features', label: '얼굴 특징 유지' },
+  { id: 'tidy-hair', label: '머리 단정하게 정리' },
+  { id: 'remove-beard', label: '수염 제거' },
+  { id: 'remove-reflection', label: '안경 반사 제거' },
+  { id: 'symmetry', label: '얼굴 대칭 교정' },
+  { id: 'whiten-teeth', label: '치아 미백' },
 ];
 
 export const ASPECT_RATIO_OPTIONS: AspectRatioOption[] = [

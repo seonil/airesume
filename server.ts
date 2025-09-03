@@ -1,11 +1,11 @@
-// FIX: Remove 'process' import to use the correct global process object and resolve type conflicts.
-// Fix: Changed the express import to use the default export. This allows for using qualified types
-// like `express.Request` to avoid potential type conflicts with other libraries.
-// FIX: Import Request, Response, and Express types from express to resolve type errors with handlers and the app instance.
-import express, { Request, Response, Express } from 'express';
+// FIX: To avoid type conflicts with other libraries and resolve type errors,
+// this file uses named imports for Express types (e.g. Request, Response).
+import express, { Express, Request, Response, NextFunction } from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { GoogleGenAI, Modality } from '@google/genai';
+// FIX: Import exit from 'process' to avoid type errors with the global process object.
+import { exit } from 'process';
 
 // --- Types and Constants (duplicated from frontend for simplicity) ---
 enum Gender {
@@ -20,14 +20,20 @@ const buildPrompt = (
   backgroundPrompt: string,
   framingPrompt: string,
   anglePrompt: string,
-  expressionPrompt: string
+  expressionPrompt: string,
+  retouchingPrompt: string,
+  specialRequest: string
 ): string => {
+  const specialRequestSection = specialRequest.trim()
+    ? `- **Special Retouching Request:** ${specialRequest.trim()}\n`
+    : '';
+
   return `You are an expert photo editor. Transform the user's photo into a professional headshot suitable for a resume.
 
 **Strict Rules:**
-1. **Identity Preservation:** The person's core facial features (eyes, nose, bone structure) and hairstyle MUST remain completely unchanged. You are forbidden from altering their fundamental identity.
+1. **Identity Preservation & Retouching:** ${retouchingPrompt} The person's core identity MUST be preserved.
 2. **Facial Expression:** ${expressionPrompt}
-3. **Natural Appearance:** Avoid any excessive or unrealistic skin smoothing, airbrushing, or other facial modifications. The final image must look natural and authentic.
+3. **Natural Appearance:** Avoid any excessive or unrealistic airbrushing. The final image must look natural and authentic based on the requested retouching level.
 4. **Focus on Clothing, Background, and Composition:** Your primary tasks are:
    - Replace the existing clothing with the specified formal attire.
    - Replace the background with the specified color.
@@ -39,44 +45,59 @@ const buildPrompt = (
 - **Gender of Person in Photo:** ${gender}
 - **Desired Attire:** ${suitPrompt}
 - **Desired Background:** ${backgroundPrompt}
-- **Final Composition:** A natural, business-style portrait with the specified framing and angle.
+${specialRequestSection}- **Final Composition:** A natural, business-style portrait with the specified framing and angle.
 
 Generate only the edited image. Do not output any text.`;
 };
 
 // --- Server Setup ---
-// Fix: Use the qualified type `express.Express` to ensure the correct type is used for the app instance.
-// FIX: Use the explicitly imported `Express` type for the app instance to fix `app.use` errors.
+// FIX: Use the named import `Express` to ensure the correct type is used for the app instance.
 const app: Express = express();
+
+// Add CORS headers for Safari compatibility
+// FIX: Explicitly type `req`, `res`, and `next` to resolve overload errors on `app.use`.
+app.use((req: Request, res: Response, next: NextFunction) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Access-Control-Allow-Credentials', 'false');
+  
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+  } else {
+    next();
+  }
+});
+
 app.use(express.json({ limit: '20mb' }));
 
-if (!process.env.API_KEY || process.env.API_KEY === 'YOUR_API_KEY_HERE') {
-  console.error("FATAL: API_KEY environment variable is not set on the server.");
-  // FIX: The type error on process.exit is likely a side-effect of other type conflicts. Fixing express types should resolve this.
-  process.exit(1);
+// Check for API_KEY or GEMINI_API_KEY environment variable
+const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
+if (!apiKey || apiKey === 'YOUR_API_KEY_HERE') {
+  console.error("FATAL: API_KEY or GEMINI_API_KEY environment variable is not set on the server.");
+  // FIX: Using the imported `exit` function resolves potential type conflicts.
+  exit(1);
 }
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const ai = new GoogleGenAI({ apiKey: apiKey });
 
 // --- API Router ---
-// FIX: Use an Express Router to modularize API routes and resolve potential routing conflicts.
 const apiRouter = express.Router();
 
 // The handler is now at '/generate' because it will be mounted under '/api'
-// Fix: Use qualified types `express.Request` and `express.Response` to resolve errors.
-// FIX: Use the explicitly imported `Request` and `Response` types for route handlers.
+// FIX: Use named types `Request` and `Response` for route handlers to resolve type errors.
 apiRouter.post('/generate', async (req: Request, res: Response) => {
   try {
-    const { imageBase64, mimeType, gender, suitPrompt, backgroundPrompt, framingPrompt, anglePrompt, expressionPrompt } = req.body;
+    const { imageBase64, mimeType, gender, suitPrompt, backgroundPrompt, framingPrompt, anglePrompt, expressionPrompt, retouchingPrompt, specialRequest } = req.body;
 
-    const requiredFields = { imageBase64, mimeType, gender, suitPrompt, backgroundPrompt, framingPrompt, anglePrompt, expressionPrompt };
+    const requiredFields: { [key: string]: any } = { imageBase64, mimeType, gender, suitPrompt, backgroundPrompt, framingPrompt, anglePrompt, expressionPrompt, retouchingPrompt };
     for (const [field, value] of Object.entries(requiredFields)) {
       if (!value) {
         return res.status(400).json({ error: `Missing required parameter: ${field}` });
       }
     }
 
-    const prompt = buildPrompt(gender, suitPrompt, backgroundPrompt, framingPrompt, anglePrompt, expressionPrompt);
+    const prompt = buildPrompt(gender, suitPrompt, backgroundPrompt, framingPrompt, anglePrompt, expressionPrompt, retouchingPrompt, specialRequest || '');
     
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
@@ -118,8 +139,7 @@ const publicPath = __dirname;
 app.use(express.static(publicPath));
 
 // SPA Fallback: All other GET requests are redirected to index.html
-// Fix: Use qualified types `express.Request` and `express.Response` to resolve errors.
-// FIX: Use the explicitly imported `Request` and `Response` types for route handlers.
+// FIX: Use named types `Request` and `Response` for route handlers to resolve type errors.
 app.get('*', (req: Request, res: Response) => {
   res.sendFile(path.join(publicPath, 'index.html'));
 });

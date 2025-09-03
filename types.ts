@@ -41,3 +41,14 @@ export interface ExpressionOption {
   label: string;
   prompt: string;
 }
+
+export interface RetouchingOption {
+  id: string;
+  label: string;
+  prompt: string;
+}
+
+export interface SpecialRequestOption {
+  id: string;
+  label: string;
+}

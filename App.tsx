@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -7,8 +8,8 @@ import ResultDisplay from './components/ResultDisplay';
 import { generateResumePhoto } from './services/geminiService';
 import { PayPalButton } from './services/paypalService'; // Corrected import path
 import { Gender } from './types';
-import type { StyleOption, BackgroundOption, AspectRatioOption, FramingOption, AngleOption, ExpressionOption } from './types';
-import { MALE_SUITS, BACKGROUND_OPTIONS, ASPECT_RATIO_OPTIONS, FRAMING_OPTIONS, ANGLE_OPTIONS, EXPRESSION_OPTIONS, PRICE_KRW, ENABLE_PAYMENT } from './constants';
+import type { StyleOption, BackgroundOption, AspectRatioOption, FramingOption, AngleOption, ExpressionOption, RetouchingOption } from './types';
+import { MALE_SUITS, BACKGROUND_OPTIONS, ASPECT_RATIO_OPTIONS, FRAMING_OPTIONS, ANGLE_OPTIONS, EXPRESSION_OPTIONS, RETOUCHING_OPTIONS, PRICE_KRW, ENABLE_PAYMENT } from './constants';
 
 // FIX: Complete truncated component and add default export.
 const App: React.FC = () => {
@@ -21,11 +22,13 @@ const App: React.FC = () => {
   // Default options state
   const [gender, setGender] = useState<Gender>(Gender.MALE);
   const [selectedSuit, setSelectedSuit] = useState<StyleOption>(MALE_SUITS[0]);
-  const [selectedBackground, setSelectedBackground] = useState<BackgroundOption>(BACKGROUND_OPTIONS[0]);
+  const [selectedBackground, setSelectedBackground] = useState<BackgroundOption>(BACKGROUND_OPTIONS[1]);
   const [selectedAspectRatio, setSelectedAspectRatio] = useState<AspectRatioOption>(ASPECT_RATIO_OPTIONS[0]);
   const [selectedFraming, setSelectedFraming] = useState<FramingOption>(FRAMING_OPTIONS[0]);
   const [selectedAngle, setSelectedAngle] = useState<AngleOption>(ANGLE_OPTIONS[0]);
-  const [selectedExpression, setSelectedExpression] = useState<ExpressionOption>(EXPRESSION_OPTIONS[0]);
+  const [selectedExpression, setSelectedExpression] = useState<ExpressionOption>(EXPRESSION_OPTIONS[1]);
+  const [selectedRetouching, setSelectedRetouching] = useState<RetouchingOption>(RETOUCHING_OPTIONS[0]);
+  const [specialRequest, setSpecialRequest] = useState<string>('');
   
   const runImageGeneration = async (
       imageFile: File,
@@ -34,7 +37,9 @@ const App: React.FC = () => {
       genBackgroundPrompt: string,
       genFramingPrompt: string,
       genAnglePrompt: string,
-      genExpressionPrompt: string
+      genExpressionPrompt: string,
+      genRetouchingPrompt: string,
+      genSpecialRequest: string
   ) => {
       setIsLoading(true);
       setError(null);
@@ -48,7 +53,9 @@ const App: React.FC = () => {
               genBackgroundPrompt,
               genFramingPrompt,
               genAnglePrompt,
-              genExpressionPrompt
+              genExpressionPrompt,
+              genRetouchingPrompt,
+              genSpecialRequest
           );
           setGeneratedImage(result);
       } catch (e) {
@@ -74,6 +81,7 @@ const App: React.FC = () => {
     setGeneratedImage(null);
     setError(null);
     setConsent(false);
+    setSpecialRequest('');
   }
 
   // This function is for the "free" mode (when ENABLE_PAYMENT is false)
@@ -94,10 +102,30 @@ const App: React.FC = () => {
         selectedBackground.prompt,
         selectedFraming.prompt,
         selectedAngle.prompt,
-        selectedExpression.prompt
+        selectedExpression.prompt,
+        selectedRetouching.prompt,
+        specialRequest
     );
   };
   
+  const handleRegenerate = async () => {
+    if (!originalImage) {
+      setError('원본 이미지를 찾을 수 없습니다. 페이지를 새로고침하고 다시 시도해주세요.');
+      return;
+    }
+    await runImageGeneration(
+        originalImage,
+        gender,
+        selectedSuit.prompt,
+        selectedBackground.prompt,
+        selectedFraming.prompt,
+        selectedAngle.prompt,
+        selectedExpression.prompt,
+        selectedRetouching.prompt,
+        specialRequest
+    );
+  };
+
   // This function is called on successful PayPal payment
   const handlePaymentSuccess = async () => {
     if (!originalImage) {
@@ -111,7 +139,9 @@ const App: React.FC = () => {
         selectedBackground.prompt,
         selectedFraming.prompt,
         selectedAngle.prompt,
-        selectedExpression.prompt
+        selectedExpression.prompt,
+        selectedRetouching.prompt,
+        specialRequest
     );
   };
 
@@ -134,6 +164,8 @@ const App: React.FC = () => {
                   selectedFraming={selectedFraming} setSelectedFraming={setSelectedFraming}
                   selectedAngle={selectedAngle} setSelectedAngle={setSelectedAngle}
                   selectedExpression={selectedExpression} setSelectedExpression={setSelectedExpression}
+                  selectedRetouching={selectedRetouching} setSelectedRetouching={setSelectedRetouching}
+                  specialRequest={specialRequest} setSpecialRequest={setSpecialRequest}
                   resetApp={resetApp}
                 />
                 <div className="mt-4 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-xl">
@@ -201,6 +233,7 @@ const App: React.FC = () => {
               generatedImage={generatedImage}
               isLoading={isLoading}
               aspectRatio={selectedAspectRatio.aspectRatio}
+              onRegenerate={handleRegenerate}
             />
           </div>
         </div>

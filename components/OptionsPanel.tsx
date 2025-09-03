@@ -1,7 +1,7 @@
 import React from 'react';
 import { Gender } from '../types';
-import type { StyleOption, BackgroundOption, AspectRatioOption, FramingOption, AngleOption, ExpressionOption } from '../types';
-import { MALE_SUITS, FEMALE_SUITS, BACKGROUND_OPTIONS, ASPECT_RATIO_OPTIONS, FRAMING_OPTIONS, ANGLE_OPTIONS, EXPRESSION_OPTIONS } from '../constants';
+import type { StyleOption, BackgroundOption, AspectRatioOption, FramingOption, AngleOption, ExpressionOption, RetouchingOption, SpecialRequestOption } from '../types';
+import { MALE_SUITS, FEMALE_SUITS, BACKGROUND_OPTIONS, ASPECT_RATIO_OPTIONS, FRAMING_OPTIONS, ANGLE_OPTIONS, EXPRESSION_OPTIONS, RETOUCHING_OPTIONS, SPECIAL_REQUEST_OPTIONS } from '../constants';
 
 interface OptionsPanelProps {
   gender: Gender;
@@ -18,6 +18,10 @@ interface OptionsPanelProps {
   setSelectedAngle: (angle: AngleOption) => void;
   selectedExpression: ExpressionOption;
   setSelectedExpression: (expression: ExpressionOption) => void;
+  selectedRetouching: RetouchingOption;
+  setSelectedRetouching: (retouching: RetouchingOption) => void;
+  specialRequest: string;
+  setSpecialRequest: (request: string) => void;
   resetApp: () => void;
 }
 
@@ -29,6 +33,8 @@ const OptionsPanel: React.FC<OptionsPanelProps> = ({
   selectedFraming, setSelectedFraming,
   selectedAngle, setSelectedAngle,
   selectedExpression, setSelectedExpression,
+  selectedRetouching, setSelectedRetouching,
+  specialRequest, setSpecialRequest,
   resetApp
 }) => {
   
@@ -42,6 +48,23 @@ const OptionsPanel: React.FC<OptionsPanelProps> = ({
         setSelectedSuit(FEMALE_SUITS[0]);
     }
   }
+
+  const handlePresetClick = (presetLabel: string) => {
+    const currentRequests = specialRequest
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean);
+
+    const requestSet = new Set(currentRequests);
+
+    if (requestSet.has(presetLabel)) {
+      requestSet.delete(presetLabel);
+    } else {
+      requestSet.add(presetLabel);
+    }
+    
+    setSpecialRequest(Array.from(requestSet).join(', '));
+  };
 
   return (
     <div className="p-6 space-y-6 bg-white dark:bg-gray-800 rounded-lg shadow-xl overflow-y-auto h-full">
@@ -122,10 +145,50 @@ const OptionsPanel: React.FC<OptionsPanelProps> = ({
           ))}
         </div>
       </div>
+
+      {/* Retouching Selection */}
+      <div className="space-y-2">
+        <label className="font-semibold text-gray-700 dark:text-gray-200">7. 리터칭 강도</label>
+        <div className="grid grid-cols-5 gap-2">
+          {RETOUCHING_OPTIONS.map(retouch => (
+            <button key={retouch.id} onClick={() => setSelectedRetouching(retouch)} className={`py-2 px-2 rounded-md transition-colors text-xs text-center ${selectedRetouching.id === retouch.id ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600'}`}>
+              {retouch.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Special Request Input */}
+      <div className="space-y-2">
+        <label htmlFor="special-request" className="font-semibold text-gray-700 dark:text-gray-200">8. 리터칭 특별 요청 (선택)</label>
+        <div className="flex flex-wrap gap-2 mb-2">
+          {SPECIAL_REQUEST_OPTIONS.map(preset => {
+            const isActive = specialRequest.split(',').map(s => s.trim()).includes(preset.label);
+            return (
+              <button
+                key={preset.id}
+                onClick={() => handlePresetClick(preset.label)}
+                className={`py-1 px-3 rounded-full transition-colors text-xs font-medium ${isActive ? 'bg-blue-600 text-white ring-2 ring-blue-400' : 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600'}`}
+              >
+                {preset.label}
+              </button>
+            );
+          })}
+        </div>
+        <textarea
+          id="special-request"
+          value={specialRequest}
+          onChange={(e) => setSpecialRequest(e.target.value)}
+          rows={3}
+          placeholder="예: 오른쪽 눈썹 위의 작은 흉터를 제거해주세요. (프리셋과 함께 직접 입력도 가능)"
+          className="w-full p-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-sm"
+          aria-label="리터칭 특별 요청 사항"
+        />
+      </div>
       
       {/* Aspect Ratio Selection */}
       <div className="space-y-2">
-        <label className="font-semibold text-gray-700 dark:text-gray-200">7. 사진 규격</label>
+        <label className="font-semibold text-gray-700 dark:text-gray-200">9. 사진 규격</label>
         <div className="grid grid-cols-3 gap-2">
           {ASPECT_RATIO_OPTIONS.map(crop => (
             <button key={crop.id} onClick={() => setSelectedAspectRatio(crop)} className={`py-2 px-3 rounded-md transition-colors text-sm ${selectedAspectRatio.id === crop.id ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600'}`}>
