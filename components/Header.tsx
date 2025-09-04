@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { APP_TITLE } from '../constants';
+import { APP_TITLE } from '../constants.ts';
 
 const Header: React.FC = () => {
   return (

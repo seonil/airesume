@@ -1,7 +1,8 @@
+
 import React from 'react';
 import { Gender } from '../types';
 import type { StyleOption, BackgroundOption, AspectRatioOption, FramingOption, AngleOption, ExpressionOption, RetouchingOption, SpecialRequestOption } from '../types';
-import { MALE_SUITS, FEMALE_SUITS, BACKGROUND_OPTIONS, ASPECT_RATIO_OPTIONS, FRAMING_OPTIONS, ANGLE_OPTIONS, EXPRESSION_OPTIONS, RETOUCHING_OPTIONS, SPECIAL_REQUEST_OPTIONS } from '../constants';
+import { MALE_SUITS, FEMALE_SUITS, BACKGROUND_OPTIONS, ASPECT_RATIO_OPTIONS, FRAMING_OPTIONS, ANGLE_OPTIONS, EXPRESSION_OPTIONS, RETOUCHING_OPTIONS, SPECIAL_REQUEST_OPTIONS } from '../constants.ts';
 
 interface OptionsPanelProps {
   gender: Gender;

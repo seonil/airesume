@@ -1,11 +1,13 @@
 // FIX: To avoid type conflicts with other libraries and resolve type errors,
 // this file uses named imports for Express types (e.g. Request, Response).
-import express, { Express, Request, Response, NextFunction } from 'express';
+// FIX: Aliased Request and Response to ExpressRequest and ExpressResponse to resolve type conflicts with other libraries.
+import express, { Express, Request as ExpressRequest, Response as ExpressResponse, NextFunction } from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { GoogleGenAI, Modality } from '@google/genai';
-// FIX: Import exit from 'process' to avoid type errors with the global process object.
+// FIX: To resolve type errors with the global `process` object, `exit` is imported directly.
 import { exit } from 'process';
+
 
 // --- Types and Constants (duplicated from frontend for simplicity) ---
 enum Gender {
@@ -56,7 +58,8 @@ const app: Express = express();
 
 // Add CORS headers for Safari compatibility
 // FIX: Explicitly type `req`, `res`, and `next` to resolve overload errors on `app.use`.
-app.use((req: Request, res: Response, next: NextFunction) => {
+// FIX: Used aliased Express types to fix errors with missing properties on req and res objects.
+app.use((req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
@@ -75,7 +78,7 @@ app.use(express.json({ limit: '20mb' }));
 const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
 if (!apiKey || apiKey === 'YOUR_API_KEY_HERE') {
   console.error("FATAL: API_KEY or GEMINI_API_KEY environment variable is not set on the server.");
-  // FIX: Using the imported `exit` function resolves potential type conflicts.
+  // FIX: The global `process` object is not correctly typed. Using the imported `exit` function resolves the type error.
   exit(1);
 }
 
@@ -86,7 +89,8 @@ const apiRouter = express.Router();
 
 // The handler is now at '/generate' because it will be mounted under '/api'
 // FIX: Use named types `Request` and `Response` for route handlers to resolve type errors.
-apiRouter.post('/generate', async (req: Request, res: Response) => {
+// FIX: Used aliased Express types to fix errors with missing properties on req and res objects.
+apiRouter.post('/generate', async (req: ExpressRequest, res: ExpressResponse) => {
   try {
     const { imageBase64, mimeType, gender, suitPrompt, backgroundPrompt, framingPrompt, anglePrompt, expressionPrompt, retouchingPrompt, specialRequest } = req.body;
 
@@ -140,7 +144,8 @@ app.use(express.static(publicPath));
 
 // SPA Fallback: All other GET requests are redirected to index.html
 // FIX: Use named types `Request` and `Response` for route handlers to resolve type errors.
-app.get('*', (req: Request, res: Response) => {
+// FIX: Used aliased Express types to fix errors with missing properties on req and res objects.
+app.get('*', (req: ExpressRequest, res: ExpressResponse) => {
   res.sendFile(path.join(publicPath, 'index.html'));
 });
 

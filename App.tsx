@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -9,7 +8,7 @@ import { generateResumePhoto } from './services/geminiService';
 import { PayPalButton } from './services/paypalService'; // Corrected import path
 import { Gender } from './types';
 import type { StyleOption, BackgroundOption, AspectRatioOption, FramingOption, AngleOption, ExpressionOption, RetouchingOption } from './types';
-import { MALE_SUITS, BACKGROUND_OPTIONS, ASPECT_RATIO_OPTIONS, FRAMING_OPTIONS, ANGLE_OPTIONS, EXPRESSION_OPTIONS, RETOUCHING_OPTIONS, PRICE_KRW, ENABLE_PAYMENT } from './constants';
+import { MALE_SUITS, BACKGROUND_OPTIONS, ASPECT_RATIO_OPTIONS, FRAMING_OPTIONS, ANGLE_OPTIONS, EXPRESSION_OPTIONS, RETOUCHING_OPTIONS, PRICE_USD, ENABLE_PAYMENT } from './constants.ts';
 
 // FIX: Complete truncated component and add default export.
 const App: React.FC = () => {
@@ -194,7 +193,7 @@ const App: React.FC = () => {
                             </div>
                         ) : (
                            <PayPalButton
-                              amount={String(PRICE_KRW)}
+                              amount={String(PRICE_USD)}
                               onSuccess={handlePaymentSuccess}
                               onError={setError}
                               disabled={!consent || isLoading}
