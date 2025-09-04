@@ -3,7 +3,7 @@ import type { StyleOption, BackgroundOption, AspectRatioOption, FramingOption, A
 
 export const APP_TITLE = 'AI 증명사진 만들기';
 export const PRICE_USD = 1;
-export const ENABLE_PAYMENT = true; // Set to true to enable PayPal checkout
+export const ENABLE_PAYMENT = false; // Set to true to enable PayPal checkout
 
 export const MALE_SUITS: StyleOption[] = [
   { id: 'navy-tie', label: '네이비 수트 / 타이', prompt: 'a navy blue two-button suit jacket, white shirt, and a classic navy blue tie' },

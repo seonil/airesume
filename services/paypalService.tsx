@@ -18,91 +18,72 @@ interface PayPalButtonProps {
 
 export const PayPalButton: React.FC<PayPalButtonProps> = ({ amount, onSuccess, onError, disabled }) => {
   const paypalRef = useRef<HTMLDivElement>(null);
-  // Use a ref to track if the script has already been added to the page
-  const scriptAdded = useRef(false);
+  const buttonRendered = useRef(false);
 
   useEffect(() => {
-    // Function to render the PayPal button once the SDK is loaded
-    const renderButton = () => {
-      // Ensure the container ref is available before rendering.
-      if (!paypalRef.current) {
-        console.warn("PayPal container not ready, button rendering aborted.");
+    const renderHostedButton = () => {
+      if (!paypalRef.current || buttonRendered.current) {
         return;
       }
-      
-      // Clear previous button instance to prevent duplicates on re-render
+
+      // Clear previous button instance
       paypalRef.current.innerHTML = '';
 
-      window.paypal.Buttons({
-        onClick: (_: any, actions: any) => {
-          if (disabled) {
-            onError('사진 사용에 동의해야 합니다.');
-            return actions.reject();
-          }
-          return actions.resolve();
-        },
-        createOrder: (_: any, actions: any) => {
-          return actions.order.create({
-            purchase_units: [{
-              description: 'AI 증명사진 생성',
-              amount: {
-                value: amount,
-                currency_code: 'USD'
-              }
-            }]
-          });
-        },
-        onApprove: async (_: any, actions: any) => {
-          return actions.order.capture().then(function() {
+      // Create unique container ID
+      const containerId = `paypal-container-${Date.now()}`;
+      paypalRef.current.innerHTML = `<div id="${containerId}"></div>`;
+
+      try {
+        window.paypal.HostedButtons({
+          hostedButtonId: "GNWYAEX76TEB2",
+          onApprove: (data: any, actions: any) => {
+            console.log('PayPal payment approved:', data);
             onSuccess();
-          }).catch(function(err: any) {
-            console.error('PayPal Checkout onApprove capture error', err);
-            onError('결제를 완료하는 중 오류가 발생했습니다. 다시 시도해주세요.');
-          });
-        },
-        onError: (err: any) => {
-          console.error('PayPal Checkout onError', err);
-          onError('결제 중 오류가 발생했습니다. 다시 시도해주세요.');
-        },
-        style: {
-            layout: 'vertical',
-            color: 'blue',
-            shape: 'rect',
-            label: 'checkout',
-            tagline: false
-        }
-      }).render(paypalRef.current);
+            return Promise.resolve();
+          },
+          onError: (err: any) => {
+            console.error('PayPal Hosted Button Error:', err);
+            onError('결제 중 오류가 발생했습니다. 다시 시도해주세요.');
+          },
+          onCancel: (data: any) => {
+            console.log('PayPal payment cancelled:', data);
+          }
+        }).render(`#${containerId}`);
+
+        buttonRendered.current = true;
+      } catch (error) {
+        console.error('Error rendering PayPal hosted button:', error);
+        onError('결제 버튼을 불러오는 중 오류가 발생했습니다.');
+      }
     };
-    
-    // Check if PayPal SDK is already loaded
-    if (window.paypal) {
-        renderButton();
-        return;
+
+    // Check if PayPal SDK is loaded
+    if (window.paypal && window.paypal.HostedButtons) {
+      renderHostedButton();
+    } else {
+      // Wait for PayPal SDK to load
+      const checkPayPal = setInterval(() => {
+        if (window.paypal && window.paypal.HostedButtons) {
+          clearInterval(checkPayPal);
+          renderHostedButton();
+        }
+      }, 100);
+
+      // Cleanup interval after 10 seconds
+      setTimeout(() => {
+        clearInterval(checkPayPal);
+        if (!window.paypal) {
+          onError('PayPal 결제 모듈을 불러올 수 없습니다. 페이지를 새로고침 해주세요.');
+        }
+      }, 10000);
     }
-    
-    // If script has not been added yet, add it
-    if (!scriptAdded.current) {
-        scriptAdded.current = true; // Mark as added immediately
-        const script = document.createElement('script');
-        // Switched to 'test' client-id for sandbox environment to debug permission issues.
-        script.src = `https://www.paypal.com/sdk/js?client-id=test&disable-funding=venmo&currency=USD`;
-        script.async = true;
-        // This attribute is crucial for running in sandboxed environments
-        script.setAttribute('data-sdk-integration-source', 'integrationbuilder');
-        script.onload = () => {
-          console.log("PayPal SDK script loaded.");
-          renderButton();
-        };
-        script.onerror = () => {
-            console.error("Failed to load PayPal SDK script.");
-            onError("결제 모듈을 불러오지 못했습니다. 페이지를 새로고침 해주세요.");
-        };
-        document.body.appendChild(script);
-    }
-    
-  }, [disabled, amount, onSuccess, onError]);
-  
-  const wrapperClass = disabled ? 'opacity-50 cursor-not-allowed' : '';
+
+    return () => {
+      buttonRendered.current = false;
+    };
+  }, [onSuccess, onError]);
+
+  const wrapperClass = disabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : '';
   const buttonText = `$${PRICE_USD.toFixed(2)} 결제하고 생성하기`;
 
   return (
@@ -110,7 +91,12 @@ export const PayPalButton: React.FC<PayPalButtonProps> = ({ amount, onSuccess, o
       <div className="text-center mb-2 text-sm font-bold text-gray-800 dark:text-gray-200">
         {buttonText}
       </div>
-      <div ref={paypalRef} />
+      {disabled && (
+        <div className="text-center mb-2 text-xs text-red-600">
+          사진 사용에 동의해주세요
+        </div>
+      )}
+      <div ref={paypalRef} className="paypal-button-container" />
     </div>
   );
 };
